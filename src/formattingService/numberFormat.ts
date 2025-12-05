@@ -136,7 +136,7 @@ export function addDecimalsToFormat(baseFormat: string, decimals: number, traili
     return addDecimalsToFormatComponent(baseFormat, decimals, trailingZeros);
 }
 
-export function addDecimalsToFormatComponent(format: string, decimals: number, trailingZeros: boolean): string {
+function addDecimalsToFormatComponent(format: string, decimals: number, trailingZeros: boolean): string {
     decimals = Math.abs(decimals);
 
     if (decimals >= 0) {
