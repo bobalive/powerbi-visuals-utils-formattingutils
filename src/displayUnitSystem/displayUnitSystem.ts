@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/* eslint-disable no-useless-escape */
+
 import { numberFormat as NumberFormat, formattingService}  from "./../formattingService/formattingService";
 
 import { double as Double } from "powerbi-visuals-utils-typeutils";
@@ -165,7 +165,6 @@ export class DisplayUnitSystem {
         return format && format.indexOf(PERCENTAGE_FORMAT) >= 0;
     }
 
-    /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
     public shouldRespectScalingUnit(format: string): boolean {
         return true;
     }

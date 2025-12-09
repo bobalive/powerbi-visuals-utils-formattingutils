@@ -30,7 +30,6 @@
  * formatting expressions for numeric types including custom formats.
  */
 
-/* eslint-disable no-useless-escape */
 import { Globalize, GlobalizeNumberFormat } from "./../../globalize/globalize";
 // powerbi.extensibility.utils.type
 import { double as Double, regExpExtensions } from "powerbi-visuals-utils-typeutils";
