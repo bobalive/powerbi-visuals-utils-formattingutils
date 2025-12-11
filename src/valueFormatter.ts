@@ -65,13 +65,69 @@ export interface ValueFormatterOptions {
     // The format string to use.
     format?: string;
 
-    // The data value.
+    /**
+     * The minimum value in the data range. Used to determine the appropriate display unit scale.
+     * 
+     * **For numeric values:**
+     * - Determines which display unit to use (e.g., K, M, B, T)
+     * - Example: value: 1500000 → formats in millions (1.50M)
+     * 
+     * **For date values:**
+     * - Must be a Date object
+     * - Used with `value2` and `tickCount` to determine date unit granularity (year, month, day, etc.)
+     * - All three parameters (value, value2, tickCount) are required for date unit formatting
+     * 
+     * @example
+     * // Numeric: Determine display unit scale
+     * valueFormatter.create({ value: 1500000, format: "#,0" }) // → "1.50M"
+     * 
+     * @example
+     * // Date: Determine date unit granularity
+     * valueFormatter.create({ 
+     *   value: new Date(2024, 0, 1),
+     *   value2: new Date(2024, 11, 31),
+     *   tickCount: 12
+     * })
+     */
     value?: any;
 
-    // The data value.
+    /**
+     * The maximum value in the data range. Used with `value` to determine optimal display unit scale.
+     * 
+     * **For numeric values:**
+     * - Ensures consistent formatting across a value range (important for chart axes)
+     * - Example: value: 1000, value2: 1000000 → uses consistent unit across range
+     * 
+     * **For date values:**
+     * - Must be a Date object
+     * - Used with `value` and `tickCount` to calculate appropriate date intervals
+     * - Required for date unit formatting (year, quarter, month, week, day, etc.)
+     * 
+     * @example
+     * // Numeric: Consistent units across range
+     * valueFormatter.create({ value: 1000, value2: 1000000 })
+     * 
+     * @example
+     * // Date: Calculate date intervals
+     * valueFormatter.create({
+     *   value: new Date(2024, 0, 1),
+     *   value2: new Date(2024, 0, 31),
+     *   tickCount: 7
+     * }) // Determines optimal interval (e.g., weekly)
+     */
     value2?: any;
 
-    // The number of ticks.
+    /**
+     * The number of tick marks or intervals for the axis.
+     * 
+     * **For numeric values:**
+     * - Optional, used for calculating precision
+     * 
+     * **For date values:**
+     * - Required when using date-based display units
+     * - Works with `value` and `value2` to determine date granularity
+     * - Example: 12 ticks between Jan-Dec → monthly intervals
+     */
     tickCount?: any;
 
     // The display unit system to use
@@ -310,6 +366,8 @@ export function checkValueInBounds(
 
     return targetNum;
 }
+
+
 
 // Creates an IValueFormatter to be used for a range of values.
 export function create(options: ValueFormatterOptions): IValueFormatter {
@@ -694,7 +752,7 @@ export function calculateExactDigitsPrecision(
         unitsDegree = leftPartLength % 3 === 0 ? unitsDegree - 1 : unitsDegree;
         const divider: number = Math.pow(1000, unitsDegree);
         if (divider > 0) {
-        value = value / divider;
+            value = value / divider;
         }
     }
 
