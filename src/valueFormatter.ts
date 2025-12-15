@@ -33,6 +33,7 @@ import { numberFormat as NumberFormat, formattingService } from "./formattingSer
 import { DateTimeSequence } from "./date/dateTimeSequence";
 import { double as Double, valueType } from "powerbi-visuals-utils-typeutils";
 import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
+import { getAbbreviationFromExponent, getDisplayUnitsForCulture } from "../globalize/cldrDisplayUnits"
 
 // powerbi
 import powerbi from "powerbi-visuals-api";
@@ -115,7 +116,7 @@ export interface ValueFormatterLocalizationOptions {
     beautify(format: string): string;
 
     // Returns an object describing the given exponent in the current language.
-    describe(exponent: number): DisplayUnitSystemNames;
+    describe(exponent: number, culture: string): DisplayUnitSystemNames;
     restatementComma: string;
     restatementCompoundAnd: string;
     restatementCompoundOr: string;
@@ -212,12 +213,22 @@ function beautify(format: string): string {
     return format;
 }
 
-function describeUnit(exponent: number): DisplayUnitSystemNames {
+function describeUnit(exponent: number, culture?: string): DisplayUnitSystemNames {
     const exponentLookup = (exponent === -1) ? "Auto" : exponent.toString();
 
-    const title: string = defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_Title"];
-    const format: string = (exponent <= 0) ? "{0}" : defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_LabelFormat"];
+    console.log("culture", culture)
+    let title: string = defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_Title"];
+    let format: string = (exponent <= 0) ? "{0}" : defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_LabelFormat"];
+    if (culture) {
+        const localization = getDisplayUnitsForCulture(culture)
+        const abbreviation = getAbbreviationFromExponent(exponent)
+        if (!abbreviation) {
+            return null
+        }
 
+        title = localization[abbreviation].title || title;
+        format = localization[abbreviation].format || format;
+    }
     if (title || format)
         return { title: title, format: format };
 }
@@ -235,7 +246,7 @@ let localizationOptions: ValueFormatterLocalizationOptions = {
     infinity: defaultLocalizedStrings["InfinityValue"],
     negativeInfinity: defaultLocalizedStrings["NegativeInfinityValue"],
     beautify: format => beautify(format),
-    describe: exponent => describeUnit(exponent),
+    describe: (exponent, culture) => describeUnit(exponent, culture),
     restatementComma: defaultLocalizedStrings["RestatementComma"],
     restatementCompoundAnd: defaultLocalizedStrings["RestatementCompoundAnd"],
     restatementCompoundOr: defaultLocalizedStrings["RestatementCompoundOr"],
@@ -257,9 +268,6 @@ export function getFormatMetadata(format: string): NumberFormat.NumericFormatMet
 
 export function setLocaleOptions(options: ValueFormatterLocalizationOptions): void {
     localizationOptions = options;
-
-    DefaultDisplayUnitSystem.RESET();
-    WholeUnitsDisplayUnitSystem.RESET();
 }
 
 export function createDefaultFormatter(
@@ -320,7 +328,8 @@ export function create(options: ValueFormatterOptions): IValueFormatter {
     const { cultureSelector } = options;
 
     if (shouldUseNumericDisplayUnits(options)) {
-        const displayUnitSystem = createDisplayUnitSystem(options.displayUnitSystemType);
+        console.log('Using numeric display units', options.cultureSelector);
+        const displayUnitSystem = createDisplayUnitSystem(options.displayUnitSystemType, options.cultureSelector);
 
         const singleValueFormattingMode = !!options.formatSingleValues;
 
@@ -396,6 +405,7 @@ export function create(options: ValueFormatterOptions): IValueFormatter {
         };
     }
 
+    console.log("Default formatter")
     return createDefaultFormatter(format, false, cultureSelector);
 }
 
@@ -458,21 +468,22 @@ export function formatVariantMeasureValue(
     }
 }
 
-export function createDisplayUnitSystem(displayUnitSystemType?: DisplayUnitSystemType): DisplayUnitSystem {
+export function createDisplayUnitSystem(displayUnitSystemType?: DisplayUnitSystemType, culture?: string): DisplayUnitSystem {
+    const localisedDescribe = (exponent: number) => localizationOptions.describe(exponent, culture);
     if (displayUnitSystemType == null)
-        return new DefaultDisplayUnitSystem(localizationOptions.describe);
+        return new DefaultDisplayUnitSystem(localisedDescribe, culture);
 
     switch (displayUnitSystemType) {
         case DisplayUnitSystemType.Default:
-            return new DefaultDisplayUnitSystem(localizationOptions.describe);
+            return new DefaultDisplayUnitSystem(localisedDescribe, culture);
         case DisplayUnitSystemType.WholeUnits:
-            return new WholeUnitsDisplayUnitSystem(localizationOptions.describe);
+            return new WholeUnitsDisplayUnitSystem(localisedDescribe, culture);
         case DisplayUnitSystemType.Verbose:
             return new NoDisplayUnitSystem();
         case DisplayUnitSystemType.DataLabels:
-            return new DataLabelsDisplayUnitSystem(localizationOptions.describe);
+            return new DataLabelsDisplayUnitSystem(localisedDescribe);
         default:
-            return new DefaultDisplayUnitSystem(localizationOptions.describe);
+            return new DefaultDisplayUnitSystem(localisedDescribe, culture);
     }
 }
 
@@ -694,7 +705,7 @@ export function calculateExactDigitsPrecision(
         unitsDegree = leftPartLength % 3 === 0 ? unitsDegree - 1 : unitsDegree;
         const divider: number = Math.pow(1000, unitsDegree);
         if (divider > 0) {
-        value = value / divider;
+            value = value / divider;
         }
     }
 
