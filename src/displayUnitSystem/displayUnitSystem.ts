@@ -363,8 +363,6 @@ export class WholeUnitsDisplayUnitSystem extends DisplayUnitSystem {
             WholeUnitsDisplayUnitSystem.units[culture][WholeUnitsDisplayUnitSystem.units[culture].length - 1].applicableRangeMax = Infinity;
         }
 
-        console.log(WholeUnitsDisplayUnitSystem.units)
-
         return WholeUnitsDisplayUnitSystem.units[culture];
     }
 
