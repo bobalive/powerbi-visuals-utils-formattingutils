@@ -170,9 +170,9 @@ export interface ValueFormatterLocalizationOptions {
 
     // Returns a beautified form the given format string.
     beautify(format: string): string;
-
+    
     // Returns an object describing the given exponent in the current language.
-    describe(exponent: number, culture: string): DisplayUnitSystemNames;
+    describe(exponent: number, culture?: string): DisplayUnitSystemNames;
     restatementComma: string;
     restatementCompoundAnd: string;
     restatementCompoundOr: string;
